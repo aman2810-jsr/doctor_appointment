@@ -1,30 +1,29 @@
 import mongoose from "mongoose";
+import bcrypt from "bcryptjs";
 
 const userSchema = new mongoose.Schema(
   {
-    name: {
-      type: String,
-      required: true,
-    },
     email: {
       type: String,
-      required: true,
-      unique: true,
+      required: [true, "Please provide an email"],
+      unique: true, // DB-level uniqueness for login
+      lowercase: true,
+      trim:true,
     },
-    passwordHash: {
+    password: {
       type: String,
-      required: true,
+      required: [true, "Please provide a password"], // hashed password
     },
     role: {
       type: String,
-      enum: ["patient", "doctor", "admin"],
-      default: "patient",
-    },
-    profile: {
-      type: Object,
+      enum: ["ADMIN", "DOCTOR", "PATIENT"],
+      required: [true, "Please provide a role"],
+      default: "PATIENT",
     },
   },
   { timestamps: true }
 );
+
+userSchema.index({ email: 1 }, { unique: true });
 
 export default mongoose.model("User", userSchema);
