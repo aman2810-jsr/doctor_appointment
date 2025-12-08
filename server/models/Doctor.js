@@ -28,6 +28,6 @@ const doctorSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-doctorSchema.index({ userId: 1 }, { unique: true });
+//doctorSchema.index({ userId: 1 }, { unique: true });
 
 export default mongoose.model("Doctor", doctorSchema);

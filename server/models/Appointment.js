@@ -37,6 +37,6 @@ const appointmentSchema = new mongoose.Schema(
 
 // Index for quick lookups
 appointmentSchema.index({ doctorId: 1, createdAt: 1 });
-appointmentSchema.index({ timeSlotId: 1 }, { unique: true });
+//appointmentSchema.index({ timeSlotId: 1 }, { unique: true });
 
 export default mongoose.model("Appointment", appointmentSchema);
