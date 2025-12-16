@@ -1,44 +1,62 @@
-import mongoose from "mongoose";
+import mongoose from 'mongoose';
 
 const timeSlotSchema = new mongoose.Schema(
   {
     scheduleId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "Schedule",
-      required: [true, "Please provide schedule ID"],
+      ref: 'Schedule',
+      required: [true, 'Please provide schedule ID'],
     },
     doctorId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "Doctor",
-      required: [true, "Please provide doctor ID"],
+      ref: 'Doctor',
+      required: [true, 'Please provide doctor ID'],
     },
-    startTime: {
+
+    // store canonical UTC Date objects for fast range queries & sorting
+    start: {
       type: Date,
-      required: [true, "Please provide start time"],
+      required: [true, 'Please provide start time'],
+      index: true,
     },
-    endTime: {
+    end: {
       type: Date,
-      required: [true, "Please provide end time"],
+      required: [true, 'Please provide end time'],
     },
-    isBooked: {
-      type: Boolean,
-      default: false,
+
+    // use enum status instead of boolean isBooked for more expressiveness
+    status: {
+      type: String,
+      enum: ['free', 'booked', 'blocked'],
+      default: 'free',
+      index: true,
     },
+
     appointmentId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "Appointment",
+      ref: 'Appointment',
       default: null,
+      index: true,
     },
-    createdAt: {
-      type: Date,
-      default: Date.now,
+
+    // flexible metadata (generationId, room, notes, createdBy, etc.)
+    meta: {
+      type: mongoose.Schema.Types.Mixed,
+      default: {},
     },
   },
   { timestamps: true }
 );
 
-// Index for quick lookups
-timeSlotSchema.index({ doctorId: 1, startTime: 1 }, { unique: true });
-timeSlotSchema.index({ doctorId: 1, isBooked: 1, startTime: 1 });
+// Unique constraint to prevent duplicate slot generation
+timeSlotSchema.index({ doctorId: 1, start: 1 }, { unique: true });
 
-export default mongoose.model("TimeSlot", timeSlotSchema);
+// Fast queries:
+// - list free slots for a doctor starting from now
+timeSlotSchema.index({ doctorId: 1, status: 1, start: 1 });
+
+// - find booked/appointment slots by doctor and date range (doctorId + start already indexed)
+// - quick lookup by appointmentId for cancellation flows
+timeSlotSchema.index({ appointmentId: 1 });
+
+export default mongoose.model('TimeSlot', timeSlotSchema);
