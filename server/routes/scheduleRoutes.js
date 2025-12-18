@@ -1,6 +1,6 @@
 import express from "express";
-import { generateSlots } from "../controllers/scheduleControllers";
-import { getSlotsBySchedule } from "../controllers/slotControllers";
+import { generateSlots } from "../controllers/scheduleControllers.js";
+import { getSlotsBySchedule } from "../controllers/slotControllers.js";
 
 const router = express.Router();
 

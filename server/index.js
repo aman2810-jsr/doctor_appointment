@@ -25,8 +25,6 @@ app.use("/api",scheduleRoutes);
 app.use("/api",doctorRoutes);
 app.use("/api",slotRoutes);
 
-
-
 app.get("/", (req, res) => {
   res.send("Backend running...");
 });
