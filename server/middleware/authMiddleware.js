@@ -8,9 +8,9 @@ export const protect = async (req, res, next) => {
     let token = null;
 
     if (authHeader && authHeader.startsWith('Bearer ')) {
-      token = authHeader.split(' ')[1];
+      token = authHeader.split(' ')[1]; // checking header(used by mobile apps)
     } else if (req.cookies && req.cookies.token) {
-      // Fall back to cookie named `token` if available
+      // Fall back to cookie named `token` if available (cookie used by web app)
       token = req.cookies.token;
     }
 

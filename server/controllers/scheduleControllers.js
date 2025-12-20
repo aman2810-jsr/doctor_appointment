@@ -104,13 +104,13 @@ export const createOrUpdateSchedule = async (req, res) => {
 
 export const generateSlots = async (req, res) => {
   try {
-    // 1️⃣ Identify schedule
+    // Identify schedule
     const { scheduleId } = req.params;
     const { generationId: clientGenerationId } = req.body || {};
 
     const generationId = clientGenerationId || `gen_${uuidv4()}`;
 
-    // 2️⃣ API-level idempotency using TimeSlot.meta
+    // API-level idempotency using TimeSlot.meta
     const existingSlot = await TimeSlot.findOne({
       scheduleId,
       "meta.generationId": generationId,
@@ -123,7 +123,7 @@ export const generateSlots = async (req, res) => {
       });
     }
 
-    // 3️⃣ Load schedule
+    // Load schedule
     const schedule = await Schedule.findById(scheduleId);
     if (!schedule) {
       return res.status(404).json({ error: "Schedule not found" });
@@ -139,7 +139,7 @@ export const generateSlots = async (req, res) => {
       breakPeriods = [],
     } = schedule;
 
-    // 4️⃣ Build day window (timezone-aware)
+    // Build day window (timezone-aware)
     const day = moment(date).format("YYYY-MM-DD");
 
     const windowStart = moment.tz(`${day} ${startTime}`, timezone);
@@ -151,7 +151,7 @@ export const generateSlots = async (req, res) => {
       });
     }
 
-    // 5️⃣ Generate slots
+    // Generate slots
     let cursor = windowStart.clone();
     const ops = [];
 
@@ -161,7 +161,7 @@ export const generateSlots = async (req, res) => {
 
       if (slotEnd.isAfter(windowEnd)) break;
 
-      // 6️⃣ Break overlap check (correct logic)
+      // Break overlap check (correct logic)
       const overlapsBreak = breakPeriods.some((b) => {
         const breakStart = moment.tz(`${day} ${b.start}`, timezone);
         const breakEnd = moment.tz(`${day} ${b.end}`, timezone);
@@ -189,7 +189,7 @@ export const generateSlots = async (req, res) => {
       cursor = slotEnd;
     }
 
-    // 7️⃣ Bulk insert (DB-level idempotency via unique index)
+    // Bulk insert (DB-level idempotency via unique index)
     let inserted = 0;
     if (ops.length > 0) {
       try {

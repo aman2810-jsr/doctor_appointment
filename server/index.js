@@ -7,6 +7,7 @@ import authRoutes from "./routes/authRoutes.js";
 import scheduleRoutes from "./routes/scheduleRoutes.js";
 import doctorRoutes from "./routes/doctorRoutes.js";
 import slotRoutes from "./routes/slotRoutes.js";
+import appointmentRoutes from "./routes/appointmentRoutes.js";
 import http from "http"; 
 import { Server } from "socket.io";
 
@@ -21,9 +22,10 @@ app.use(cookieParser());
 
 // API routes
 app.use("/api", authRoutes);
-app.use("/api",scheduleRoutes);
-app.use("/api",doctorRoutes);
-app.use("/api",slotRoutes);
+app.use("/api", scheduleRoutes);
+app.use("/api", doctorRoutes);
+app.use("/api", slotRoutes);
+app.use("/api", appointmentRoutes);
 
 app.get("/", (req, res) => {
   res.send("Backend running...");
