@@ -1,53 +1,65 @@
 import TimeSlot from "../models/TimeSlot.js";
 import Appointment from "../models/Appointment.js";
 
-
 export const bookAppointment = async (req, res) => {
   const { timeSlotId } = req.body;
   const patientId = req.user._id;
+
+  if (!timeSlotId) {
+    return res.status(400).json({ success: false, message: "Missing timeSlotId" });
+  }
+  if (!patientId) {
+    return res.status(400).json({ success: false, message: "Missing patientId" });
+  }
+
+  const session = await Appointment.startSession();
+
   try {
-    if (!timeSlotId) {
-      return res
-        .status(400)
-        .json({ success: false, message: "Missing timeSlotId" });
-    }
-    if (!patientId) {
-      return res
-        .status(400)
-        .json({ success: false, message: "Missing patientId in user context" });
-    }
+    await session.startTransaction();
 
-    // Fetch slot from DB
-    const slot = await TimeSlot.findById(timeSlotId);
+    // Atomically find and update slot
+    const slot = await TimeSlot.findOneAndUpdate(
+      { _id: timeSlotId, status: "free" },
+      { $set: { status: "booked" } },
+      { new: true, session }
+    );
     if (!slot) {
+      await session.abortTransaction();
+      session.endSession();
       return res
-        .status(404)
-        .json({ success: false, message: "Time slot not found" });
-    }
-    if (slot.status === "booked") {
-      return res
-        .status(400)
-        .json({ success: false, message: "Time slot already booked" });
+        .status(409)
+        .json({
+          success: false,
+          message: "Time slot already booked",
+        });
     }
 
-    // Create appointment
-    const appointment = await Appointment.create({
-      patientId,
-      doctorId: slot.doctorId,
-      timeSlotId: slot._id,
-    });
+    // Create appointment inside transaction
+    const appointment = await Appointment.create(
+      [
+        {
+          patientId,
+          doctorId: slot.doctorId,
+          timeSlotId: slot._id,
+        },
+      ],
+      { session }
+    );
 
-    // Mark slot as booked
-    slot.status = "booked";
-    slot.appointmentId = appointment._id;
-    await slot.save();
+    // Update slot with appointmentId
+    slot.appointmentId = appointment[0]._id;
+    await slot.save({ session });
 
+    await session.commitTransaction();
+    session.endSession();
     return res.status(201).json({
       success: true,
       message: "Appointment booked successfully",
-      appointment,
+      appointment: appointment[0],
     });
   } catch (error) {
+    await session.abortTransaction();
+    session.endSession();
     console.error("Error booking appointment:", error);
     return res
       .status(500)
